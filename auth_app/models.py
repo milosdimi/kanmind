@@ -1,3 +1,1 @@
-from django.db import models
-
-# Create your models here.
+"""The auth app uses Django's built-in User model, no own models."""

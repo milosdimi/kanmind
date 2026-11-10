@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+"""The built-in User model is already registered in the admin."""

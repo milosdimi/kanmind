@@ -19,3 +19,6 @@ htmlcov/
 .env
 .vscode/
 .idea/
+
+# Course endpoint documentation (local reference only)
+docs/
