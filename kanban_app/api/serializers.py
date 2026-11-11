@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from auth_app.api.serializers import UserSerializer
 from kanban_app.models import Board, Task
+from .utils import is_board_member
 
 
 class EmailQuerySerializer(serializers.Serializer):
@@ -29,6 +30,63 @@ class BoardTaskSerializer(serializers.ModelSerializer):
     def get_comments_count(self, obj):
         """Return the number of comments of the task."""
         return obj.comments.count()
+
+
+class TaskSerializer(BoardTaskSerializer):
+    """Creates a task and shows it with its board id.
+
+    assignee_id and reviewer_id are written, assignee and reviewer
+    are returned as user objects.
+    """
+
+    assignee_id = serializers.PrimaryKeyRelatedField(
+        source="assignee", queryset=User.objects.all(),
+        write_only=True, required=False, allow_null=True,
+    )
+    reviewer_id = serializers.PrimaryKeyRelatedField(
+        source="reviewer", queryset=User.objects.all(),
+        write_only=True, required=False, allow_null=True,
+    )
+
+    class Meta(BoardTaskSerializer.Meta):
+        fields = [
+            "id", "board", "title", "description", "status", "priority",
+            "assignee_id", "reviewer_id", "assignee", "reviewer",
+            "due_date", "comments_count",
+        ]
+
+    def validate(self, attrs):
+        """Assignee and reviewer must be members of the task's board."""
+        board = attrs.get("board") or self.instance.board
+        for field in ["assignee", "reviewer"]:
+            user = attrs.get(field)
+            if user and not is_board_member(board, user):
+                raise serializers.ValidationError(
+                    {f"{field}_id": "User must be a member of the board."}
+                )
+        return attrs
+
+
+class TaskUpdateSerializer(TaskSerializer):
+    """Updates a task; the board can not be changed."""
+
+    comments_count = None
+
+    class Meta(TaskSerializer.Meta):
+        fields = [
+            "id", "board", "title", "description", "status", "priority",
+            "assignee_id", "reviewer_id", "assignee", "reviewer",
+            "due_date",
+        ]
+        extra_kwargs = {"board": {"write_only": True}}
+
+    def validate_board(self, value):
+        """Reject any attempt to move the task to another board."""
+        if value != self.instance.board:
+            raise serializers.ValidationError(
+                "Changing the board of a task is not allowed."
+            )
+        return value
 
 
 class BoardListSerializer(serializers.ModelSerializer):

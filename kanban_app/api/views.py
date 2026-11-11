@@ -1,20 +1,27 @@
-"""API views for boards and the email check."""
+"""API views for boards, the email check and tasks."""
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import generics, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from auth_app.api.serializers import UserSerializer
-from kanban_app.models import Board
-from .permissions import IsBoardOwner, IsBoardOwnerOrMember
+from kanban_app.models import Board, Task
+from .permissions import (
+    IsBoardOwner,
+    IsBoardOwnerOrMember,
+    IsTaskCreatorOrBoardOwner,
+)
 from .serializers import (
     BoardDetailSerializer,
     BoardListSerializer,
     BoardUpdateSerializer,
     EmailQuerySerializer,
+    TaskSerializer,
+    TaskUpdateSerializer,
 )
 
 
@@ -71,3 +78,75 @@ class EmailCheckView(APIView):
         email = query.validated_data["email"]
         user = get_object_or_404(User, email__iexact=email)
         return Response(UserSerializer(user).data)
+
+
+def get_board_from_request(request):
+    """Return the board named in the request body.
+
+    A missing or non-numeric id gives 400, an unknown id gives 404.
+    """
+    board_id = request.data.get("board")
+    try:
+        board_id = int(board_id)
+    except (TypeError, ValueError):
+        raise ValidationError({"board": ["A valid board id is required."]})
+    return get_object_or_404(Board, pk=board_id)
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    """Create, update and delete tasks.
+
+    Only members of the board may create or update its tasks.
+    Only the creator of a task or the board owner may delete it.
+    """
+
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated & IsBoardOwnerOrMember]
+    http_method_names = ["post", "patch", "delete", "options"]
+
+    def get_serializer_class(self):
+        """Use the update serializer for PATCH."""
+        if self.action == "partial_update":
+            return TaskUpdateSerializer
+        return super().get_serializer_class()
+
+    def get_permissions(self):
+        """Only the creator or the board owner may delete a task."""
+        if self.action == "destroy":
+            return [IsAuthenticated(), IsTaskCreatorOrBoardOwner()]
+        return super().get_permissions()
+
+    def create(self, request, *args, **kwargs):
+        """Check the board first: 404 if missing, 403 if not a member."""
+        board = get_board_from_request(request)
+        self.check_object_permissions(request, board)
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        """Save the current user as creator of the task."""
+        serializer.save(created_by=self.request.user)
+
+
+class AssignedTasksView(generics.ListAPIView):
+    """GET /api/tasks/assigned-to-me/ - tasks the user has to work on."""
+
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return only tasks where the user is the assignee."""
+        return super().get_queryset().filter(assignee=self.request.user)
+
+
+class ReviewingTasksView(generics.ListAPIView):
+    """GET /api/tasks/reviewing/ - tasks the user has to review."""
+
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return only tasks where the user is the reviewer."""
+        return super().get_queryset().filter(reviewer=self.request.user)
