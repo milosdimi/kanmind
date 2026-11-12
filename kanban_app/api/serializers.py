@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from auth_app.api.serializers import UserSerializer
-from kanban_app.models import Board, Task
+from kanban_app.models import Board, Comment, Task
 from .utils import is_board_member
 
 
@@ -152,3 +152,17 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ["id", "title", "members", "owner_data", "members_data"]
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Comment with the full name of its author."""
+
+    author = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ["id", "created_at", "author", "content"]
+
+    def get_author(self, obj):
+        """Return the full name of the author."""
+        return UserSerializer(obj.author).data["fullname"]

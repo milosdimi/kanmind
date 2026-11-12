@@ -1,4 +1,4 @@
-"""API views for boards, the email check and tasks."""
+"""API views for boards, the email check, tasks and comments."""
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -9,16 +9,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from auth_app.api.serializers import UserSerializer
-from kanban_app.models import Board, Task
+from kanban_app.models import Board, Comment, Task
 from .permissions import (
     IsBoardOwner,
     IsBoardOwnerOrMember,
+    IsCommentAuthor,
     IsTaskCreatorOrBoardOwner,
 )
 from .serializers import (
     BoardDetailSerializer,
     BoardListSerializer,
     BoardUpdateSerializer,
+    CommentSerializer,
     EmailQuerySerializer,
     TaskSerializer,
     TaskUpdateSerializer,
@@ -35,7 +37,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     queryset = Board.objects.all()
     serializer_class = BoardListSerializer
-    permission_classes = [IsAuthenticated & IsBoardOwnerOrMember]
+    permission_classes = [IsAuthenticated, IsBoardOwnerOrMember]
     http_method_names = ["get", "post", "patch", "delete", "options"]
 
     def get_queryset(self):
@@ -102,7 +104,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated & IsBoardOwnerOrMember]
+    permission_classes = [IsAuthenticated, IsBoardOwnerOrMember]
     http_method_names = ["post", "patch", "delete", "options"]
 
     def get_serializer_class(self):
@@ -150,3 +152,44 @@ class ReviewingTasksView(generics.ListAPIView):
     def get_queryset(self):
         """Return only tasks where the user is the reviewer."""
         return super().get_queryset().filter(reviewer=self.request.user)
+
+
+class CommentListCreateView(generics.ListCreateAPIView):
+    """GET and POST /api/tasks/{task_id}/comments/.
+
+    Only members of the task's board may read or write comments.
+    """
+
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated, IsBoardOwnerOrMember]
+
+    def initial(self, request, *args, **kwargs):
+        """Load the task before anything else: 404 or 403 come first."""
+        super().initial(request, *args, **kwargs)
+        self.task = get_object_or_404(Task, pk=self.kwargs["task_id"])
+        self.check_object_permissions(request, self.task)
+
+    def get_queryset(self):
+        """Return only the comments of this task."""
+        return super().get_queryset().filter(task=self.task)
+
+    def perform_create(self, serializer):
+        """Save the comment with its task and the current user as author."""
+        serializer.save(task=self.task, author=self.request.user)
+
+
+class CommentDeleteView(generics.DestroyAPIView):
+    """DELETE /api/tasks/{task_id}/comments/{comment_id}/.
+
+    Only the author of a comment may delete it.
+    """
+
+    queryset = Comment.objects.all()
+    permission_classes = [IsAuthenticated, IsCommentAuthor]
+    lookup_url_kwarg = "comment_id"
+
+    def get_queryset(self):
+        """Search the comment only inside the given task (404 if missing)."""
+        task = get_object_or_404(Task, pk=self.kwargs["task_id"])
+        return super().get_queryset().filter(task=task)

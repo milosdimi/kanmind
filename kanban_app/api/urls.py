@@ -5,6 +5,8 @@ from rest_framework.routers import SimpleRouter
 from .views import (
     AssignedTasksView,
     BoardViewSet,
+    CommentDeleteView,
+    CommentListCreateView,
     EmailCheckView,
     ReviewingTasksView,
     TaskViewSet,
@@ -27,5 +29,15 @@ urlpatterns = [
         "tasks/reviewing/",
         ReviewingTasksView.as_view(),
         name="tasks-reviewing",
+    ),
+    path(
+        "tasks/<int:task_id>/comments/",
+        CommentListCreateView.as_view(),
+        name="task-comments",
+    ),
+    path(
+        "tasks/<int:task_id>/comments/<int:comment_id>/",
+        CommentDeleteView.as_view(),
+        name="task-comment-detail",
     ),
 ] + router.urls

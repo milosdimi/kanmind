@@ -1,4 +1,4 @@
-"""Object permissions for boards and tasks."""
+"""Object permissions for boards, tasks and comments."""
 from rest_framework.permissions import BasePermission
 
 from .utils import get_board, is_board_member
@@ -36,3 +36,13 @@ class IsTaskCreatorOrBoardOwner(BasePermission):
         """Check if the user created the task or owns its board."""
         user_id = request.user.id
         return obj.created_by_id == user_id or obj.board.owner_id == user_id
+
+
+class IsCommentAuthor(BasePermission):
+    """Allow access only to the author of the comment."""
+
+    message = "Only the author of this comment can delete it."
+
+    def has_object_permission(self, request, view, obj):
+        """Check if the user wrote the comment."""
+        return obj.author_id == request.user.id
