@@ -56,9 +56,10 @@ class RegistrationTests(APITestCase):
 
     def test_register_with_missing_fields_fails(self):
         """An empty request returns 400 and creates no user."""
+        users_before = User.objects.count()
         response = self.client.post(self.url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertFalse(User.objects.exists())
+        self.assertEqual(User.objects.count(), users_before)
 
 
 class LoginTests(APITestCase):
@@ -94,6 +95,13 @@ class LoginTests(APITestCase):
         data = {"email": "nobody@mail.de", "password": "secret123"}
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_guest_user_can_log_in(self):
+        """The guest user from the data migration can log in."""
+        data = {"email": "kevin@kovacsi.de", "password": "asdasdasd"}
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["fullname"], "Guest User")
 
     def test_login_ignores_invalid_token(self):
         """An outdated token in the header must not block the login."""

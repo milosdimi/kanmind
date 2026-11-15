@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,7 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-fu@t3sghs5_u8%!4!-4ryb#y)pvuxtk*tj5(&oshxlbgig78$b'
+# Set DJANGO_SECRET_KEY in the environment; the fallback is for local
+# development only.
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-fu@t3sghs5_u8%!4!-4ryb#y)pvuxtk*tj5(&oshxlbgig78$b',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -89,19 +95,13 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
+PASSWORD_VALIDATION = 'django.contrib.auth.password_validation.'
+
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': PASSWORD_VALIDATION + 'UserAttributeSimilarityValidator'},
+    {'NAME': PASSWORD_VALIDATION + 'MinimumLengthValidator'},
+    {'NAME': PASSWORD_VALIDATION + 'CommonPasswordValidator'},
+    {'NAME': PASSWORD_VALIDATION + 'NumericPasswordValidator'},
 ]
 
 
