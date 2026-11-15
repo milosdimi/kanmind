@@ -81,9 +81,21 @@ python manage.py runserver
 - API: <http://127.0.0.1:8000/api/>
 - Admin panel: <http://127.0.0.1:8000/admin/>
 
-**Secret key:** for local development a fallback key is used. For any
-real deployment set your own key in the environment variable
-`DJANGO_SECRET_KEY` and switch `DEBUG` off in `core/settings.py`.
+### Environment variables (deployment)
+
+Locally nothing has to be set. On a server the following environment
+variables configure the project (lists are comma separated):
+
+| Variable                       | Local default                                   | Example on a server              |
+|--------------------------------|-------------------------------------------------|----------------------------------|
+| `DJANGO_SECRET_KEY`            | development key (insecure)                      | a long random string             |
+| `DJANGO_DEBUG`                 | `True`                                          | `False`                          |
+| `DJANGO_ALLOWED_HOSTS`         | `127.0.0.1,localhost`                           | `kanmind-api.example.com`        |
+| `DJANGO_CORS_ALLOWED_ORIGINS`  | `http://127.0.0.1:5500,http://localhost:5500`   | `https://kanmind.example.com`    |
+| `DJANGO_CSRF_TRUSTED_ORIGINS`  | empty                                           | `https://kanmind-api.example.com`|
+
+On the server also run `python manage.py collectstatic` once, so the
+admin panel gets its CSS and JavaScript.
 
 ## Connect the frontend
 
@@ -93,7 +105,7 @@ real deployment set your own key in the environment variable
    **Live Server** extension.
 3. CORS is enabled for `http://127.0.0.1:5500` and `http://localhost:5500`
    (the default Live Server addresses). If your Live Server uses another
-   port, add it to `CORS_ALLOWED_ORIGINS` in `core/settings.py`.
+   port, set `DJANGO_CORS_ALLOWED_ORIGINS` (see the table above).
 
 ## Guest login
 

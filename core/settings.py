@@ -17,6 +17,12 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def env_list(name, default):
+    """Read a comma separated list from an environment variable."""
+    value = os.environ.get(name, default)
+    return [item.strip() for item in value.split(',') if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
@@ -29,9 +35,14 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Set DJANGO_DEBUG=False on the server.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+# Domains this backend answers to, e.g. "kanmind-api.dimit.cc".
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost')
+
+# Needed for the admin login over HTTPS on the server.
+CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS', '')
 
 
 # Application definition
@@ -122,6 +133,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# "python manage.py collectstatic" copies the admin CSS/JS here,
+# so the web server can deliver it.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 # Django REST Framework: token auth, every endpoint requires login by default
 REST_FRAMEWORK = {
@@ -134,11 +149,12 @@ REST_FRAMEWORK = {
 }
 
 
-# CORS: allow the frontend served by VS Code Live Server
-CORS_ALLOWED_ORIGINS = [
-    'http://127.0.0.1:5500',
-    'http://localhost:5500',
-]
+# CORS: frontends that may call this API.
+# Default: VS Code Live Server; on the server set DJANGO_CORS_ALLOWED_ORIGINS.
+CORS_ALLOWED_ORIGINS = env_list(
+    'DJANGO_CORS_ALLOWED_ORIGINS',
+    'http://127.0.0.1:5500,http://localhost:5500',
+)
 
 
 # Email
