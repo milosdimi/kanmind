@@ -102,7 +102,7 @@ automatically by a data migration when you run `python manage.py migrate`:
 
 | Email              | Password    |
 |--------------------|-------------|
-| `kevin@kovacsi.de` | `asdasdasd` |
+| `guest@kanmind.de` | `guest1234` |
 
 ## Authentication
 

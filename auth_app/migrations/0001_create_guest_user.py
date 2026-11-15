@@ -2,8 +2,8 @@
 from django.contrib.auth.hashers import make_password
 from django.db import migrations
 
-GUEST_EMAIL = "kevin@kovacsi.de"
-GUEST_PASSWORD = "asdasdasd"
+GUEST_EMAIL = "guest@kanmind.de"
+GUEST_PASSWORD = "guest1234"
 
 
 def create_guest_user(apps, schema_editor):
@@ -31,6 +31,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("auth", "0012_alter_user_first_name_max_length"),
+        ("authtoken", "0004_alter_tokenproxy_options"),
     ]
 
     operations = [

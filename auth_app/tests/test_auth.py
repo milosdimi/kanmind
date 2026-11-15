@@ -98,7 +98,7 @@ class LoginTests(APITestCase):
 
     def test_guest_user_can_log_in(self):
         """The guest user from the data migration can log in."""
-        data = {"email": "kevin@kovacsi.de", "password": "asdasdasd"}
+        data = {"email": "guest@kanmind.de", "password": "guest1234"}
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["fullname"], "Guest User")
