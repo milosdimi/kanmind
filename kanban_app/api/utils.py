@@ -1,14 +1,12 @@
 """Small helpers shared by permissions and serializers."""
-from kanban_app.models import Board, Task
+from kanban_app.models import Board
 
 
 def get_board(obj):
-    """Return the board a board, task or comment belongs to."""
+    """Return the board itself or the board a task belongs to."""
     if isinstance(obj, Board):
         return obj
-    if isinstance(obj, Task):
-        return obj.board
-    return obj.task.board
+    return obj.board
 
 
 def is_board_member(board, user):

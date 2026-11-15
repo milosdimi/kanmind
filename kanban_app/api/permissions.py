@@ -7,7 +7,7 @@ from .utils import get_board, is_board_member
 class IsBoardOwnerOrMember(BasePermission):
     """Allow access only to the owner or a member of the related board.
 
-    Works for boards, tasks and comments: the board is looked up first.
+    Works for boards and tasks: the board is looked up first.
     """
 
     message = "You must be the owner or a member of this board."
