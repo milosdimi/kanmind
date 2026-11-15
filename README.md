@@ -9,10 +9,22 @@ is provided separately by the Developer Akademie and talks to this API.
 
 Built with **Django** and **Django REST Framework**, using token authentication.
 
+## Live demo
+
+| Part      | URL                                           | Hosting        |
+|-----------|-----------------------------------------------|----------------|
+| Frontend  | <https://kanmind.dimit.cc>                    | Namecheap      |
+| API       | <https://milosdimi.pythonanywhere.com/api/>   | PythonAnywhere |
+
+Log in with the **guest account** (`guest@kanmind.de` / `guest1234`) or
+register your own account. The live API uses its own database, separate
+from any local installation.
+
 ---
 
 ## Table of contents
 
+- [Live demo](#live-demo)
 - [Tech stack](#tech-stack)
 - [Requirements](#requirements)
 - [Installation](#installation)
